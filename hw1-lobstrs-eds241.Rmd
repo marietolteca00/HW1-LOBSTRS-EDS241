@@ -1,8 +1,8 @@
 ---
 title: "Assignment 1"
 subtitle: "California Spiny Lobster (*Panulirus Interruptus*): Assessing the Impact of Marine Protected Areas (MPAs) at 5 Reef Sites in Santa Barbara County" 
-author: "EDS 241 / ESM 244 (**Due: 1/17**)"
-date: "1/8/26"
+author: "Marie Tolteca - EDS 241 / ESM 244 (**Due: 1/17**)"
+date: "1/17/26"
 output: 
     html_document:
       theme: flatly
@@ -31,7 +31,7 @@ knitr::opts_chunk$set(eval=FALSE, warning = FALSE, message = FALSE )
 -  Your knitted presentation should meet the quality you'd submit to research colleagues or feel confident sharing publicly. Refer to the rubric for details about presentation standards.
 
 
-**Assignment submission (YOUR NAME):** ______________________________________
+**Assignment submission (Marie Tolteca):** ______________________________________
 
 
 ----------------------------------------------------------------------
@@ -77,6 +77,8 @@ Let’s break it down step by step and see what the data reveals! 📊
 
 **a.** Do the control sites (Arroyo Quemado, Carpenteria, and Mohawk) provide a strong counterfactual for our treatment sites (Naples, Isla Vista)? Write a paragraph making a case for why this comparison is ceteris paribus or whether selection bias is likely (be specific!).  
 
+From the image above, I believe this may be selection bias. The reason is because we have more information on the control sites with a total of 3 sites and only 2 control sites. The location of the control sites are close in proximity whereas the control sites are more scattered.
+
 ------------------------------------------------------------------------
 
 #### Step 2: Read & wrangle data
@@ -88,7 +90,8 @@ Let’s break it down step by step and see what the data reveals! 📊
 ```{r}
 # HINT: check for coding of missing values (`na = "-99999"`)
 
-rawdata <- 
+rawdata <- read_csv(here('data','spiny_abundance_sb_18.csv')) %>% 
+    clean_names()
 
 ```
 
@@ -98,7 +101,8 @@ rawdata <-
 
 ```{r}
 
-tidydata <- 
+tidydata <- rawdata %>% 
+    mutate(reef = factor(site, levels = c("Arroyo Quemado", "Carpenteria", "Mohawk", "Isla Vista",  "Naples")))
     
 ```
 
