@@ -47,6 +47,8 @@ library(jtools)
 library(gt)
 library(gtsummary)
 library(interactions) 
+library(ggridges)
+library(beeswarm)
 
 ```
 
@@ -90,7 +92,7 @@ From the image above, I believe this may be selection bias. The reason is becaus
 ```{r}
 # HINT: check for coding of missing values (`na = "-99999"`)
 
-rawdata <- read_csv(here('data','spiny_abundance_sb_18.csv')) %>% 
+rawdata <- read_csv(here('data','spiny_abundance_sb_18.csv'), na = '-99999') %>% 
     clean_names()
 
 ```
@@ -102,11 +104,17 @@ rawdata <- read_csv(here('data','spiny_abundance_sb_18.csv')) %>%
 ```{r}
 
 tidydata <- rawdata %>% 
-    mutate(reef = factor(site, levels = c("Arroyo Quemado", "Carpenteria", "Mohawk", "Isla Vista",  "Naples")))
-    
+    mutate(reef = factor(site,
+                         levels = c("Arroyo Quemado", "Carpenteria", "Mohawk", "Isla Vista",  "Naples"),
+                         ordered = TRUE))
 ```
 
 Create new `df` named `spiny_counts` 
+```{r}
+spiny_counts <- tidydata
+
+```
+
 
 **d.** Create a new variable `counts` to allow for an analysis of lobster counts where the unit-level of observation is the total number of observed lobsters per `site`, `year` and `transect`. 
 
@@ -119,10 +127,23 @@ Create new `df` named `spiny_counts`
 ```{r}
 #HINT(d): Use `group_by()` & `summarize()` to provide the total number of lobsters observed at each site-year-transect row-observation. 
 
+count <- tidydata %>% 
+    group_by(year, site, transect) %>% 
+    summarize(num_lobsters = sum(count,na.rm=TRUE), 
+              mean_size = mean(size_mm,na.rm=TRUE), 
+              .groups = "drop")
+
 #HINT(e): Use `case_when()` to create the 3 new variable columns
 
-spiny_counts <- 
-
+spiny_counts <- count %>% 
+    mutate(
+        mpa = case_when(
+            site %in% c('IVEE','NAPL') ~ "MPA",
+            site %in% c('AQUE', 'CARP', 'MOHK') ~ "non_MPA"),
+        treat = case_when(
+            site %in% c('IVEE','NAPL') ~ 1,
+            site %in% c('AQUE', 'CARP', 'MOHK')  ~ 0 
+        ))
 ```
 
 > NOTE: This step is crucial to the analysis. Check with a friend or come to TA/instructor office hours to make sure the counts are coded correctly!
@@ -153,17 +174,94 @@ Create a plot of lobster **size** :
 4) You choose the grouping variable(s)!
 
 ```{r}
-# plot 1: ....
-
-spiny_counts %>% 
-ggplot()
-    
+#| fig-alt: "A boxplot of penguin flipper lengths where Gentoo penguins have flipper lengths that are about 12% larger than Adelie or Chinstrap penguins."
 ```
 
+
+```{r}
+#| fig-alt: "A ridge plot displaying the distribution of lobster counts by site. Sites are ordered reverse alphabetically. A red vertical dashed line indicates the overall mean count of approximately 25 lobsters across all sites."
+
+spiny_counts %>% 
+  mutate(site = fct_rev(site)) %>%  
+  ggplot(aes(x = num_lobsters, y = site, fill = site)) +
+  geom_density_ridges(alpha = 0.7) +
+  scale_fill_viridis_d(option = "plasma") +
+  geom_vline(xintercept = mean(spiny_counts$num_lobsters), 
+             linetype = "dashed", color = "red", size = 0.5) + 
+  labs(
+    title = "Distribution of Lobster Counts by Site",
+    x = "Number of Lobsters",
+    y = "Site"
+  ) +
+  theme_light() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| fig-alt: "A violin plot with jittered points showing lobster count distribution by MPA status (MPA vs non-MPA). A red dashed horizontal line indicates the overall mean lobster count across both groups."
+
+# 2
+spiny_counts %>% 
+  ggplot(aes(x = mpa, y = num_lobsters)) +
+  geom_violin(fill = 'dodgerblue', alpha = 0.6) +  
+  geom_jitter(width = 0.2, alpha = 0.5, size = 1.5) +  
+    # Displaying median of number of lobsters
+  geom_hline(aes(yintercept = mean(num_lobsters)), 
+             linetype = "dashed", color = "red", size = 1) + 
+  labs(
+    title = "Lobster Counts by MPA Status",
+    x = "Marine Protected Area (MPA) Status",
+    y = "Number of Lobsters"
+  ) +
+  theme_light()
+```
+
+```{r}
+#| fig-alt: "A beeswarm plot showing the distribution of lobster counts by year. Each point represents an observation, colored by year. A red dashed horizontal line indicates the overall median count of approximately 10 lobsters."
+
+# 3
+spiny_counts %>% 
+  ggplot(aes(x = as.factor(year), y = num_lobsters, color = as.factor(year))) +
+  ggbeeswarm::geom_beeswarm(alpha = 0.6, size = 2) +
+  scale_color_viridis_d(option = "plasma") +
+  geom_hline(yintercept = median(spiny_counts$num_lobsters), 
+             linetype = "dashed", color = "red", size = 1) + 
+  labs(
+    title = "Lobster Count Distribution by Year",
+    x = "Year",
+    y = "Number of Lobsters"
+  ) +
+  theme_light() +
+  theme(legend.position = "none")
+```
+
+
+```{r}
+#| fig-alt: "A boxplot overlaid with beeswarm points showing the distribution of mean lobster size by site. Sites are ordered reverse alphabetically. Boxplots show median, quartiles, and range, while individual points show the distribution of observations."
+
+spiny_counts %>% 
+  mutate(site = fct_rev(site)) %>%  
+  ggplot(aes(y = site, x = mean_size, fill = site)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  ggbeeswarm::geom_beeswarm(alpha = 0.4, size = 1.5) +
+  scale_fill_viridis_d(option = "viridis") +
+  labs(
+    y = 'Site',
+    x = 'Mean Size of Lobsters (mm)',
+    title = "Distribution of Average Lobster Size by Site"
+  ) +
+  theme_light() +
+  theme(legend.position = "none")
+```
 **c.** Compare means of the outcome by treatment group. Using the `tbl_summary()` function from the package [`gt_summary`](https://www.danieldsjoberg.com/gtsummary/articles/tbl_summary.html) 
 
 ```{r}
 # USE: gt_summary::tbl_summary()
+tbl_summary(data = spiny_counts,
+            by = mpa,
+            label = list(mpa = c("MPA", "Non-MPA")),
+            statistic = all_continuous() ~ "{mean}")
+
 ```
 
 ------------------------------------------------------------------------
@@ -174,10 +272,13 @@ ggplot()
 
 **b.** Interpret the intercept & predictor coefficients *in your own words*. Use full sentences and write your interpretation of the regression results to be as clear as possible to a non-academic audience.
 
+- The intercept coefficient is the number of lobsters and the predictor is the treatment. For every `5.36` of treatment there is about `22.73` number of lobsters found in Non-MPA and MPA sites.
+
 ```{r}
 # NOTE: We will not evaluate/interpret model fit in this assignment (e.g., R-square)
 
-m1_ols <- 
+m1_ols <- lm(num_lobsters ~ treat, 
+             data = spiny_counts)
 
 summ(m1_ols, model.fit = FALSE) 
 
