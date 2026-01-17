@@ -101,12 +101,19 @@ rawdata <- read_csv(here('data','spiny_abundance_sb_18.csv'), na = '-99999') %>%
     
     "Arroyo Quemado", "Carpenteria", "Mohawk", "Isla Vista",  "Naples"
 
-```{r}
+# FIX 
 
+```{r}
+# FIX
 tidydata <- rawdata %>% 
-    mutate(reef = factor(site,
-                         levels = c("Arroyo Quemado", "Carpenteria", "Mohawk", "Isla Vista",  "Naples"),
-                         ordered = TRUE))
+    mutate(reef = case_when(
+        site == "AQUE" ~ "Arroyo Quemado",
+        site == "CARP" ~ "Carpenteria",
+        site == "MOHK" ~ "Mohawk",
+        site == "IVEE" ~ "Isla Vista",
+        site == "NAPL" ~ "Naples"),
+        reef = factor(reef,
+                      levels = c("Arroyo Quemado","Carpenteria","Mohawk", "Isla Vista","Naples")))
 ```
 
 Create new `df` named `spiny_counts` 
@@ -172,12 +179,6 @@ Create plots displaying the distribution of lobster **counts**:
 Create a plot of lobster **size** :
 
 4) You choose the grouping variable(s)!
-
-```{r}
-#| fig-alt: "A boxplot of penguin flipper lengths where Gentoo penguins have flipper lengths that are about 12% larger than Adelie or Chinstrap penguins."
-```
-
-
 ```{r}
 #| fig-alt: "A ridge plot displaying the distribution of lobster counts by site. Sites are ordered reverse alphabetically. A red vertical dashed line indicates the overall mean count of approximately 25 lobsters across all sites."
 
@@ -257,11 +258,21 @@ spiny_counts %>%
 
 ```{r}
 # USE: gt_summary::tbl_summary()
-tbl_summary(data = spiny_counts,
-            by = mpa,
-            label = list(mpa = c("MPA", "Non-MPA")),
-            statistic = all_continuous() ~ "{mean}")
-
+spiny_counts %>% 
+  select(mpa, num_lobsters) %>% 
+  tbl_summary(
+    by = mpa,
+    # Getting Calcs
+    statistic = all_continuous() ~ "{mean} ({sd})", 
+    # Better Labeling
+    label = num_lobsters ~ "Number of Lobsters" 
+  ) %>%
+  modify_header(
+    # 
+    stat_1 = "**MPA**",
+    stat_2 = "**Non-MPA**"
+  ) %>%
+  bold_labels()
 ```
 
 ------------------------------------------------------------------------
@@ -272,12 +283,14 @@ tbl_summary(data = spiny_counts,
 
 **b.** Interpret the intercept & predictor coefficients *in your own words*. Use full sentences and write your interpretation of the regression results to be as clear as possible to a non-academic audience.
 
-- The intercept coefficient is the number of lobsters and the predictor is the treatment. For every `5.36` of treatment there is about `22.73` number of lobsters found in Non-MPA and MPA sites.
-
+```
+- Intercept: On average, there are approximate 28% number of lobsters in MPA's.
+- non-mpa: The model estimates a reduction of 5% number of lobsters in Non-MPA's.
+```
 ```{r}
 # NOTE: We will not evaluate/interpret model fit in this assignment (e.g., R-square)
 
-m1_ols <- lm(num_lobsters ~ treat, 
+m1_ols <- lm(num_lobsters ~ mpa, 
              data = spiny_counts)
 
 summ(m1_ols, model.fit = FALSE) 
@@ -287,22 +300,24 @@ summ(m1_ols, model.fit = FALSE)
 **c.** Check the model assumptions using the `check_model` function from the `performance` package
 
 **d.** Explain the results of the 4 diagnostic plots. Why are we getting this result?
+1. In the first plot, the dots do not fall within the line, and they should be generally curved around zero.
+- Overall, The reason we might be getting these results is because this test might not be adequent for the data we have. Another general linear model can be used and run `check_model` functions.
 
 ```{r}
 check_model(m1_ols,  check = "qq" )
 ```
 
-
+2. The residuals fall outside of the normal curve, although it is generally close to the normal curve.
 ```{r}
 check_model(m1_ols, check = "normality")
 ```
 
-
+3. The reference line is not flat and horizontal, it follows the shape with variance around it.
 ```{r}
 check_model(m1_ols, check = "homogeneity")
 ```
 
-
+4. The model predicted data does not resemeble the spike of the observed data, however it does represent a normal distribution..
 ```{r}
 check_model(m1_ols, check = "pp_check")
 ```
@@ -314,24 +329,38 @@ check_model(m1_ols, check = "pp_check")
 **a.** Estimate a Poisson regression model using the `glm()` function
 
 **b.** Interpret the predictor coefficient in your own words. Use full sentences and write your interpretation of the results to be as clear as possible to a non-academic audience.
+- Intercept: On average, the model estimates our MPA lobster count to have 28 lobsters.
+- non-mpa: The model estimate that there is a reduction of 19 lobster counts in non-mpa locations.
 
 **c.** Explain the statistical concept of dispersion and overdispersion in the context of this model. 
+- Dispersion describes how much the data can vary. If the mean number of lobsters at a site is 5, the variance is assumed to also be 5.
+- Overdispersion occurs when there is more variability in the data than expected. In our model this can be represent by how the each sites ecosystem can be different.
 
 **d.** Compare results with previous model, explain change in the significance of the treatment effect
+- The difference between OLS and Poisson, is that poisson is used for modeling count outcomes and with the link function of log, it restricts values to only be positive outcomes. The OLS is used for continuous approximations to normal outcomes, assumptions are more complicated since it does not account for discrete and skewed data. In the summary the OLS SE and P Values were much higher than the poisson model, meaning they are not significant.
+
 
 ```{r}
 #HINT1: Incidence Ratio Rate (IRR): Exponentiation of beta returns coefficient which is interpreted as the 'percent change' for a one unit increase in the predictor 
 
 #HINT2: For the second glm() argument `family` use the following specification option `family = poisson(link = "log")`
 
-m2_pois <- 
+m2_pois <-glm(num_lobsters ~ mpa,
+                  family = poisson(link = "log"),# Using log for multiplicative
+                  data = spiny_counts
+                  )
 
+summ(m2_pois, model.fit = FALSE)
+#> exp(3.34) = 28.21
+#> (exp(-0.21)-1)*100 = -18.94
 ```
 
 **e.** Check the model assumptions. Explain results.
+In the assumption of poisson, Not all counts fit the Poisson curve, mean ≠ dispersion (variance),and high proportion of zeros. Our results from the poisson model is that both the SE and pvalue are much smaller, meaning they are significant.
 
 **f.** Conduct tests for over-dispersion & zero-inflation. Explain results.
 
+When the `check_model` was ran for the `m2_pois` the figures are more accurate, although there may be another model that may be a better fit for our count data. In the results for overdispersion test we got a high ratio of 67.03. From the high ratio, we can tell that we our data has significant overdispersion. In the results for zero-inflation we have a zero predicted zeroes. Although, there are 27 observed zeros, this means that the model is underfitting zeros.  
 ```{r}
 check_model(m2_pois)
 ```
@@ -347,8 +376,12 @@ check_zeroinflation(m2_pois)
 **g.** Fit a negative binomial model using the function glm.nb() from the package `MASS` and check model diagnostics 
 
 **h.** In 1-2 sentences explain rationale for fitting this GLM model.
+A negative binomial was used to model overdispersed count data, it allows to account for over or under dispersion. While it is more flexible than a poisson glm, the estimated effect suggests about a 19% reduction in lobster abundance at non-MPA sites, accounting for overdispersion increases uncertainty and not significant.
 
 **i.** Interpret the treatment estimate result in your own words. Compare with results from the previous model.
+Intercept: Our model estimates an average of 3.34% (28 count) number of lobsters to be found in MPA locations.
+non-mpa: The model estimate that there is a reduction of 19% lobster counts in non-mpa locations. 
+Comparing the results with the poisson model, the negative binomial fit the `check_model` very accurate. The distribution of residuals, posterior predictive check, misspecified dispersion and zero-inflation plots fall closer to each other than in the poisson model. Taking a look into the overdispersion, there is a ratio of 1.400 and a p-value of 0.064, smaller values than our previous model. The zero-inflation show the lower observed zeros and higher predicted zeros showcasing the moderate fitting of zeros in outcome.
 
 ```{r}
 library(MASS) ## NOTE: The `select()` function is masked. Use: `dplyr::select()` ##
@@ -358,7 +391,12 @@ library(MASS) ## NOTE: The `select()` function is masked. Use: `dplyr::select()`
 
 # NOTE: The `glm.nb()` function does not require a `family` argument
 
-m3_nb <- 
+m3_nb <- spiny_counts %>% 
+    dplyr::select(num_lobsters,mpa) %>% 
+    glm.nb(num_lobsters ~ mpa,
+           data  = .)
+
+summ(m3_nb, model.fit = FALSE)
 
 ```
 
@@ -387,10 +425,12 @@ check_model(m3_nb)
 **a.** Use the `export_summ()` function from the `jtools` package to look at the three regression models you fit side-by-side.
 
 **c.** Write a short paragraph comparing the results. Is the treatment effect `robust` or stable across the model specifications. 
+The treatment effect is consistent across models, indicating fewer lobsters in non-MPA locations. However, the statistical significance of this effect is not robust to model choice. The Poisson model finds a highly significant negative effect, but diagnostic checks indicate overdispersion and excess zeros, which violate Poisson assumptions. When this extra variability is accounted for in the negative binomial model, SE increase and the treatment effect is no longer statistically significant. This suggests that while the estimated effect size is stable, the strength of the evidence for a treatment effect depends on the modeling assumptions.
 
 ```{r}
 
 export_summs(# ADD MODELS
+    m1_ols, m2_pois, m3_nb,
              model.names = c("OLS","Poisson", "NB"),
              statistics = "none")
 
