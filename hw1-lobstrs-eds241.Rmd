@@ -214,6 +214,7 @@ spiny_counts %>%
     x = "Marine Protected Area (MPA) Status",
     y = "Number of Lobsters"
   ) +
+    scale_x_discrete(labels = c("MPA", "Non-MPA"))+
   theme_light()
 ```
 
@@ -448,8 +449,11 @@ export_summs(# ADD MODELS
 - Include an interaction term between variables `treat` & `year` (`treat*year`)
 
 **c.** Take a look at the regression output. Each coefficient provides a comparison or the difference in means for a specific sub-group in the data. Informally, describe the what the model has estimated at a conceptual level (NOTE: you do not have to interpret coefficients individually)
+- This model estimates differences in lobster counts between treated and untreated sites while controlling year to year. This interaction term being year, allows for variation and impact in treatment areas over time. 
 
 **d.** Explain why the main effect for treatment is negative? *Does this result make sense?
+The main effect for treatment is negative is because the first implementations of being treated could have just started. This means most of the area is barely being protected from the public, new plants could have been plants and have not yet gone into affect. This results does make sense since the first two years were rocking but then it starts to improve over time. Even by the year 2013, there is reduction of about 1.37 compared to the previous year.
+
 
 ```{r}
 
@@ -457,7 +461,7 @@ ff_counts <- spiny_counts %>%
     mutate(year=as_factor(year))
     
 m5_fixedeffs <- glm.nb(
-    counts ~ 
+    num_lobsters ~ 
         treat +
         year +
         treat*year,
@@ -468,14 +472,22 @@ summ(m5_fixedeffs, model.fit = FALSE)
 
 **e.** Look at the model predictions: Use the `interact_plot()` function from package `interactions` to plot mean predictions by year and treatment status. 
 
-**f.** Re-evaluate your responses (c) and (b) above. 
+**f.** Re-evaluate your responses (c) and (b) above.
+In both plot, treated areas were lower than untreated locations. However, in both plots, it is notable that treated/ MPA locations have more abundance of lobsters compared to non-mpa locations.
 
 ```{r}
 
-interact_plot(m5_fixedeffs, pred = year, modx = treat,
-              outcome.scale = "link") # NOTE: y-axis on log-scale
+p1 <- interact_plot(m5_fixedeffs, pred = year, modx = treat,
+              outcome.scale = "link") + # NOTE: y-axis on log-scale
+    labs(title = "link space")
 
 # HINT: Change `outcome.scale` to "response" to convert y-axis scale to counts
+
+p2 <- interact_plot(m5_fixedeffs, pred = year, modx = treat,
+              outcome.scale = "response") + # NOTE: y-axis on log-scale
+    labs(title = "count space")
+
+p1 + p2
 ```
 
 **g.** Using `ggplot()` create a plot in same style as the previous `interaction plot`, but displaying the original scale of the outcome variable (lobster counts). This type of plot is commonly used to show how the treatment effect changes across discrete time points (i.e., panel data).
@@ -490,9 +502,26 @@ The plot should have...
 # Hint 1: Group counts by `year` and `mpa` and calculate the `mean_count`
 # Hint 2: Convert variable `year` to a factor
 
-plot_counts <- 
+plot_counts <- ff_counts %>% 
+    mutate(year=as_factor(year)) %>% 
+    group_by(year, mpa) %>% 
+    summarize(mean_count = mean(num_lobsters, na.rm = TRUE))
 
 # plot_counts %>% ggplot() ...
+plot_counts %>% ggplot(
+    aes(x= year, y = mean_count, group = mpa, color = mpa))+
+    geom_line() + 
+    geom_point() +
+    scale_color_manual(values = 
+        c("MPA" = "dodgerblue4",
+        "non_MPA" = "lightblue"),
+        labels = c("MPA", "Non-MPA")
+        ) +
+    labs(x = "Year",
+         y = "Mean Count (Lobsters)",
+         title = "Mean Lobster Count by Year and MPA Status",
+         color  =  "MPA") +
+    theme_light()
 ```
 
 ------------------------------------------------------------------------
@@ -500,12 +529,27 @@ plot_counts <-
 #### Step 8: Reconsider causal identification assumptions
 
 a. Discuss whether you think `spillover effects` are likely in this research context (see Glossary of terms; https://docs.google.com/document/d/1RIudsVcYhWGpqC-Uftk9UTz3PIq6stVyEpT44EPNgpE/edit?usp=sharing)
+-  I do not think that there was a spillover effect in this study, since it would be hard to improve a non-mpa location without any help or vise versa, damage a MPA site. With an established MPA, it makes sense that the abundance of lobster count increases. If the number did not increase, there would have to be other accommodations. 
+
 b. Explain why spillover is an issue for the identification of causal effects
+- Spillover is an issue for the identification of causal effect because it can impact overall measurements of the study causing mis-interpretations and biased results.
+
 c. How does spillover relate to impact in this research setting?
+- The spillover related to the impact in this research by the number of lobsters found in treated and untreated areas.
+
 d. Discuss the following causal inference assumptions in the context of the MPA treatment effect estimator. Evaluate if each of the assumption are reasonable: 
+
     
     1) SUTVA: Stable Unit Treatment Value assumption 
+    - Causal inference assumption: 
+    No interference: One unit’s treatment does not affect another unit’s outcome (MPA/Treat). 
+    No hidden variation: The treatment is implemented consistently for all units (i.e., all units receive the same     treatment)
+    - In the case of the study, I do not believe that there were any assumption violated. The overall goal of the study was to measure reef health and lobster abundance in MPA and non MPA areas.
+    
     2) Excludability assumption
+    The excludability assumption requires that the intervention influences the outcome only through the proposed mechanisms, such as leader efforts and community coordination, and not through other unintended pathways.
+    - An intervention could be a fisherman could have gone to an MPA site without anyone noticing. The researcher may have made an assumption that no boundaries were crossed.
+
 
 ------------------------------------------------------------------------
 
