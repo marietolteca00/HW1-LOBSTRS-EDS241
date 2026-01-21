@@ -1,7 +1,7 @@
 ---
 title: "Assignment 1"
-author: "Marie Tolteca - EDS 241 / ESM 244 (**Due: 1/17**)"
-date: "1/17/26"
+author: "Marie Tolteca - EDS 241 / ESM 244 (**Due: 1/20**)"
+date: "1/20/26"
 output:
   html_document:
     theme: flatly
@@ -103,10 +103,7 @@ rawdata <- read_csv(here('data','spiny_abundance_sb_18.csv'), na = '-99999') %>%
     
     "Arroyo Quemado", "Carpenteria", "Mohawk", "Isla Vista",  "Naples"
 
-# FIX 
-
 ```{r}
-# FIX
 tidydata <- rawdata %>% 
     mutate(reef = case_when(
         site == "AQUE" ~ "Arroyo Quemado",

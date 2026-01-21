@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Marie Tolteca - EDS 241 / ESM 244 (Due: 1/17)" />
+<meta name="author" content="Marie Tolteca - EDS 241 / ESM 244 (Due: 1/20)" />
 
 
 <title>Assignment 1</title>
@@ -372,8 +372,8 @@ display: none;
 Interruptus</em>): Assessing the Impact of Marine Protected Areas (MPAs)
 at 5 Reef Sites in Santa Barbara County</h3>
 <h4 class="author">Marie Tolteca - EDS 241 / ESM 244 (<strong>Due:
-1/17</strong>)</h4>
-<h4 class="date">1/17/26</h4>
+1/20</strong>)</h4>
+<h4 class="date">1/20/26</h4>
 
 </div>
 
@@ -479,12 +479,7 @@ location) create a new variable <code>reef</code> as a
 <code>factor</code> and add the following labels in the order listed
 (i.e., re-order the <code>levels</code>):</p>
 <pre><code>&quot;Arroyo Quemado&quot;, &quot;Carpenteria&quot;, &quot;Mohawk&quot;, &quot;Isla Vista&quot;,  &quot;Naples&quot;</code></pre>
-</div>
-</div>
-<div id="fix" class="section level1">
-<h1>FIX</h1>
-<pre class="r"><code># FIX
-tidydata &lt;- rawdata %&gt;% 
+<pre class="r"><code>tidydata &lt;- rawdata %&gt;% 
     mutate(reef = case_when(
         site == &quot;AQUE&quot; ~ &quot;Arroyo Quemado&quot;,
         site == &quot;CARP&quot; ~ &quot;Carpenteria&quot;,
@@ -535,6 +530,7 @@ come to TA/instructor office hours to make sure the counts are coded
 correctly!</p>
 </blockquote>
 <hr />
+</div>
 <div id="step-3-explore-visualize-data" class="section level4">
 <h4>Step 3: Explore &amp; visualize data</h4>
 <p><strong>a.</strong> Take a look at the data! Get familiar with the
@@ -701,8 +697,8 @@ observed data, however it does represent a normal distribution..</li>
 words. Use full sentences and write your interpretation of the results
 to be as clear as possible to a non-academic audience. - Intercept: On
 average, the model estimates our MPA lobster count to have 28 lobsters.
-- non-mpa: The model estimate that there is a reduction of 19 lobster
-counts in non-mpa locations.</p>
+- non-mpa: The model estimate that there is a reduction of 19% lower
+abundance compared to mpa sites.</p>
 <p><strong>c.</strong> Explain the statistical concept of dispersion and
 overdispersion in the context of this model. - Dispersion describes how
 much the data can vary. If the mean number of lobsters at a site is 5,
@@ -710,14 +706,12 @@ the variance is assumed to also be 5. - Overdispersion occurs when there
 is more variability in the data than expected. In our model this can be
 represent by how the each sites ecosystem can be different.</p>
 <p><strong>d.</strong> Compare results with previous model, explain
-change in the significance of the treatment effect - The difference
-between OLS and Poisson, is that poisson is used for modeling count
-outcomes and with the link function of log, it restricts values to only
-be positive outcomes. The OLS is used for continuous approximations to
-normal outcomes, assumptions are more complicated since it does not
-account for discrete and skewed data. In the summary the OLS SE and P
-Values were much higher than the poisson model, meaning they are not
-significant.</p>
+change in the significance of the treatment effect - Compared to OLS,
+the Poisson model is designed for count data and accounts for skewness
+and the fact that counts cannot be negative. As a result, the Poisson
+model produces smaller standard errors and shows the treatment effect as
+statistically significant, whereas the OLS model overestimates
+uncertainty and fails to detect significance.</p>
 <pre class="r"><code>#HINT1: Incidence Ratio Rate (IRR): Exponentiation of beta returns coefficient which is interpreted as the &#39;percent change&#39; for a one unit increase in the predictor 
 
 #HINT2: For the second glm() argument `family` use the following specification option `family = poisson(link = &quot;log&quot;)`
@@ -752,24 +746,21 @@ underfitting zeros.</p>
 glm.nb() from the package <code>MASS</code> and check model
 diagnostics</p>
 <p><strong>h.</strong> In 1-2 sentences explain rationale for fitting
-this GLM model. A negative binomial was used to model overdispersed
-count data, it allows to account for over or under dispersion. While it
-is more flexible than a poisson glm, the estimated effect suggests about
-a 19% reduction in lobster abundance at non-MPA sites, accounting for
-overdispersion increases uncertainty and not significant.</p>
+this GLM model. A negative binomial model was used because the lobster
+count data showed overdispersion, meaning the variance was larger than
+the mean. This model is more flexible than Poisson and produces more
+accurate standard errors, which in this case makes the treatment effect
+non-significant after accounting for extra variability.</p>
 <p><strong>i.</strong> Interpret the treatment estimate result in your
 own words. Compare with results from the previous model. Intercept: Our
 model estimates an average of 3.34% (28 count) number of lobsters to be
 found in MPA locations. non-mpa: The model estimate that there is a
-reduction of 19% lobster counts in non-mpa locations. Comparing the
-results with the poisson model, the negative binomial fit the
-<code>check_model</code> very accurate. The distribution of residuals,
-posterior predictive check, misspecified dispersion and zero-inflation
-plots fall closer to each other than in the poisson model. Taking a look
-into the overdispersion, there is a ratio of 1.400 and a p-value of
-0.064, smaller values than our previous model. The zero-inflation show
-the lower observed zeros and higher predicted zeros showcasing the
-moderate fitting of zeros in outcome.</p>
+reduction of 19% lobster counts in non-mpa locations. Compared with the
+Poisson model, the negative binomial accounts for overdispersion, which
+increases uncertainty; as a result, the treatment effect is no longer
+statistically significant. Diagnostic checks show that the negative
+binomial fits the data better, with residuals and zero counts more
+accurately represented.</p>
 <pre class="r"><code>library(MASS) ## NOTE: The `select()` function is masked. Use: `dplyr::select()` ##</code></pre>
 <pre class="r"><code># NOTE: The `glm.nb()` function does not require a `family` argument
 
@@ -830,12 +821,13 @@ year. This interaction term being year, allows for variation and impact
 in treatment areas over time.</p>
 <p><strong>d.</strong> Explain why the main effect for treatment is
 negative? *Does this result make sense? The main effect for treatment is
-negative is because the first implementations of being treated could
-have just started. This means most of the area is barely being protected
-from the public, new plants could have been plants and have not yet gone
-into affect. This results does make sense since the first two years were
-rocking but then it starts to improve over time. Even by the year 2013,
-there is reduction of about 1.37 compared to the previous year.</p>
+negative because, in a model with interactions, the main effect
+represents the treatment difference in the reference (baseline) year.
+Early in the study, treated sites may have had lower lobster counts
+before protections fully took effect. This result makes sense because
+the positive effects of MPAs accumulate over time, which is captured by
+the positive treatment and year interaction coefficients in later
+years.</p>
 <pre class="r"><code>ff_counts &lt;- spiny_counts %&gt;% 
     mutate(year=as_factor(year))
     
@@ -911,27 +903,29 @@ plot_counts %&gt;% ggplot(
 in this research context (see Glossary of terms; <a href="https://docs.google.com/document/d/1RIudsVcYhWGpqC-Uftk9UTz3PIq6stVyEpT44EPNgpE/edit?usp=sharing" class="uri">https://docs.google.com/document/d/1RIudsVcYhWGpqC-Uftk9UTz3PIq6stVyEpT44EPNgpE/edit?usp=sharing</a>)</li>
 </ol>
 <ul>
-<li>I do not think that there was a spillover effect in this study,
-since it would be hard to improve a non-mpa location without any help or
-vise versa, damage a MPA site. With an established MPA, it makes sense
-that the abundance of lobster count increases. If the number did not
-increase, there would have to be other accommodations.</li>
+<li>I do not think spillover effects are likely in this study because
+the MPA treatment in one site is unlikely to directly affect lobster
+abundance in nearby non-MPA sites. Each site’s lobster population is
+largely independent, so the treatment effect is isolated.</li>
 </ul>
 <ol start="2" style="list-style-type: lower-alpha">
 <li>Explain why spillover is an issue for the identification of causal
 effects</li>
 </ol>
 <ul>
-<li>Spillover is an issue for the identification of causal effect
-because it can impact overall measurements of the study causing
-mis-interpretations and biased results.</li>
+<li>Spillover is an issue because if treatment in one site affects
+outcomes in other sites, it violates the assumption that each unit’s
+outcome depends only on its own treatment. This can bias estimates of
+the causal effect.</li>
 </ul>
 <ol start="3" style="list-style-type: lower-alpha">
 <li>How does spillover relate to impact in this research setting?</li>
 </ol>
 <ul>
-<li>The spillover related to the impact in this research by the number
-of lobsters found in treated and untreated areas.</li>
+<li>In this study, spillover would mean that lobster abundance in
+non-MPA sites changes because of nearby MPAs. If present, it could make
+treated and untreated sites more similar, underestimating the treatment
+effect.</li>
 </ul>
 <ol start="4" style="list-style-type: lower-alpha">
 <li><p>Discuss the following causal inference assumptions in the context
@@ -945,9 +939,10 @@ assumption are reasonable:</p>
 does not affect another unit’s outcome (MPA/Treat). No hidden variation:
 The treatment is implemented consistently for all units (i.e., all units
 receive the same treatment)</li>
-<li>In the case of the study, I do not believe that there were any
-assumption violated. The overall goal of the study was to measure reef
-health and lobster abundance in MPA and non MPA areas.</li>
+<li>The SUTVA assumption appears reasonable in this study. Lobster
+abundance in each site is unlikely to be affected by the treatment
+status of other sites(no inference), and the MPA management was applied
+consistently across treated sites(no hidden variation).</li>
 </ul>
 <ol start="2" style="list-style-type: decimal">
 <li>Excludability assumption The excludability assumption requires that
