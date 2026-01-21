@@ -1,11 +1,13 @@
 ---
 title: "Assignment 1"
-subtitle: "California Spiny Lobster (*Panulirus Interruptus*): Assessing the Impact of Marine Protected Areas (MPAs) at 5 Reef Sites in Santa Barbara County" 
 author: "Marie Tolteca - EDS 241 / ESM 244 (**Due: 1/17**)"
 date: "1/17/26"
-output: 
-    html_document:
-      theme: flatly
+output:
+  html_document:
+    theme: flatly
+  pdf_document: default
+subtitle: 'California Spiny Lobster (*Panulirus Interruptus*): Assessing the Impact
+  of Marine Protected Areas (MPAs) at 5 Reef Sites in Santa Barbara County'
 ---
 
 ```{r setup, include=FALSE}
@@ -331,14 +333,14 @@ check_model(m1_ols, check = "pp_check")
 
 **b.** Interpret the predictor coefficient in your own words. Use full sentences and write your interpretation of the results to be as clear as possible to a non-academic audience.
 - Intercept: On average, the model estimates our MPA lobster count to have 28 lobsters.
-- non-mpa: The model estimate that there is a reduction of 19 lobster counts in non-mpa locations.
+- non-mpa: The model estimate that there is a reduction of 19% lower abundance compared to mpa sites.
 
 **c.** Explain the statistical concept of dispersion and overdispersion in the context of this model. 
 - Dispersion describes how much the data can vary. If the mean number of lobsters at a site is 5, the variance is assumed to also be 5.
 - Overdispersion occurs when there is more variability in the data than expected. In our model this can be represent by how the each sites ecosystem can be different.
 
 **d.** Compare results with previous model, explain change in the significance of the treatment effect
-- The difference between OLS and Poisson, is that poisson is used for modeling count outcomes and with the link function of log, it restricts values to only be positive outcomes. The OLS is used for continuous approximations to normal outcomes, assumptions are more complicated since it does not account for discrete and skewed data. In the summary the OLS SE and P Values were much higher than the poisson model, meaning they are not significant.
+- Compared to OLS, the Poisson model is designed for count data and accounts for skewness and the fact that counts cannot be negative. As a result, the Poisson model produces smaller standard errors and shows the treatment effect as statistically significant, whereas the OLS model overestimates uncertainty and fails to detect significance.
 
 
 ```{r}
@@ -377,12 +379,12 @@ check_zeroinflation(m2_pois)
 **g.** Fit a negative binomial model using the function glm.nb() from the package `MASS` and check model diagnostics 
 
 **h.** In 1-2 sentences explain rationale for fitting this GLM model.
-A negative binomial was used to model overdispersed count data, it allows to account for over or under dispersion. While it is more flexible than a poisson glm, the estimated effect suggests about a 19% reduction in lobster abundance at non-MPA sites, accounting for overdispersion increases uncertainty and not significant.
+A negative binomial model was used because the lobster count data showed overdispersion, meaning the variance was larger than the mean. This model is more flexible than Poisson and produces more accurate standard errors, which in this case makes the treatment effect non-significant after accounting for extra variability.
 
 **i.** Interpret the treatment estimate result in your own words. Compare with results from the previous model.
 Intercept: Our model estimates an average of 3.34% (28 count) number of lobsters to be found in MPA locations.
 non-mpa: The model estimate that there is a reduction of 19% lobster counts in non-mpa locations. 
-Comparing the results with the poisson model, the negative binomial fit the `check_model` very accurate. The distribution of residuals, posterior predictive check, misspecified dispersion and zero-inflation plots fall closer to each other than in the poisson model. Taking a look into the overdispersion, there is a ratio of 1.400 and a p-value of 0.064, smaller values than our previous model. The zero-inflation show the lower observed zeros and higher predicted zeros showcasing the moderate fitting of zeros in outcome.
+Compared with the Poisson model, the negative binomial accounts for overdispersion, which increases uncertainty; as a result, the treatment effect is no longer statistically significant. Diagnostic checks show that the negative binomial fits the data better, with residuals and zero counts more accurately represented.
 
 ```{r}
 library(MASS) ## NOTE: The `select()` function is masked. Use: `dplyr::select()` ##
@@ -452,7 +454,7 @@ export_summs(# ADD MODELS
 - This model estimates differences in lobster counts between treated and untreated sites while controlling year to year. This interaction term being year, allows for variation and impact in treatment areas over time. 
 
 **d.** Explain why the main effect for treatment is negative? *Does this result make sense?
-The main effect for treatment is negative is because the first implementations of being treated could have just started. This means most of the area is barely being protected from the public, new plants could have been plants and have not yet gone into affect. This results does make sense since the first two years were rocking but then it starts to improve over time. Even by the year 2013, there is reduction of about 1.37 compared to the previous year.
+The main effect for treatment is negative because, in a model with interactions, the main effect represents the treatment difference in the reference (baseline) year. Early in the study, treated sites may have had lower lobster counts before protections fully took effect. This result makes sense because the positive effects of MPAs accumulate over time, which is captured by the positive treatment and year interaction coefficients in later years.
 
 
 ```{r}
@@ -479,13 +481,18 @@ In both plot, treated areas were lower than untreated locations. However, in bot
 
 p1 <- interact_plot(m5_fixedeffs, pred = year, modx = treat,
               outcome.scale = "link") + # NOTE: y-axis on log-scale
-    labs(title = "link space")
+    labs(title = "Link Space",
+         x = 'Year',
+         y = 'Lobster Count')
 
 # HINT: Change `outcome.scale` to "response" to convert y-axis scale to counts
 
 p2 <- interact_plot(m5_fixedeffs, pred = year, modx = treat,
               outcome.scale = "response") + # NOTE: y-axis on log-scale
-    labs(title = "count space")
+    labs(title = "Count Space",
+         x = 'Year',
+         y = 'Lobster Count',
+         modx = 'Treatment')
 
 p1 + p2
 ```
@@ -529,13 +536,13 @@ plot_counts %>% ggplot(
 #### Step 8: Reconsider causal identification assumptions
 
 a. Discuss whether you think `spillover effects` are likely in this research context (see Glossary of terms; https://docs.google.com/document/d/1RIudsVcYhWGpqC-Uftk9UTz3PIq6stVyEpT44EPNgpE/edit?usp=sharing)
--  I do not think that there was a spillover effect in this study, since it would be hard to improve a non-mpa location without any help or vise versa, damage a MPA site. With an established MPA, it makes sense that the abundance of lobster count increases. If the number did not increase, there would have to be other accommodations. 
+- I do not think spillover effects are likely in this study because the MPA treatment in one site is unlikely to directly affect lobster abundance in nearby non-MPA sites. Each site’s lobster population is largely independent, so the treatment effect is isolated. 
 
 b. Explain why spillover is an issue for the identification of causal effects
-- Spillover is an issue for the identification of causal effect because it can impact overall measurements of the study causing mis-interpretations and biased results.
+- Spillover is an issue because if treatment in one site affects outcomes in other sites, it violates the assumption that each unit’s outcome depends only on its own treatment. This can bias estimates of the causal effect.
 
 c. How does spillover relate to impact in this research setting?
-- The spillover related to the impact in this research by the number of lobsters found in treated and untreated areas.
+- In this study, spillover would mean that lobster abundance in non-MPA sites changes because of nearby MPAs. If present, it could make treated and untreated sites more similar, underestimating the treatment effect.
 
 d. Discuss the following causal inference assumptions in the context of the MPA treatment effect estimator. Evaluate if each of the assumption are reasonable: 
 
@@ -544,7 +551,7 @@ d. Discuss the following causal inference assumptions in the context of the MPA 
     - Causal inference assumption: 
     No interference: One unit’s treatment does not affect another unit’s outcome (MPA/Treat). 
     No hidden variation: The treatment is implemented consistently for all units (i.e., all units receive the same     treatment)
-    - In the case of the study, I do not believe that there were any assumption violated. The overall goal of the study was to measure reef health and lobster abundance in MPA and non MPA areas.
+    - The SUTVA assumption appears reasonable in this study. Lobster abundance in each site is unlikely to be affected by the treatment status of other sites(no inference), and the MPA management was applied consistently across treated sites(no hidden variation).
     
     2) Excludability assumption
     The excludability assumption requires that the intervention influences the outcome only through the proposed mechanisms, such as leader efforts and community coordination, and not through other unintended pathways.
