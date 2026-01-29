@@ -2,7 +2,7 @@
 title: "Assignment 1"
 author: "Marie Tolteca - EDS 241 / ESM 244 (**Due: 1/20**)"
 date: "1/20/26"
-output:
+output: 
   html_document:
     theme: flatly
   pdf_document: default
@@ -11,8 +11,9 @@ subtitle: 'California Spiny Lobster (*Panulirus Interruptus*): Assessing the Imp
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(eval=FALSE, warning = FALSE, message = FALSE )
+knitr::opts_chunk$set(eval=TRUE, warning = FALSE, message = FALSE )
 ```
+
 
 ------------------------------------------------------------------------
 
@@ -81,7 +82,7 @@ Let’s break it down step by step and see what the data reveals! 📊
 
 **a.** Do the control sites (Arroyo Quemado, Carpenteria, and Mohawk) provide a strong counterfactual for our treatment sites (Naples, Isla Vista)? Write a paragraph making a case for why this comparison is ceteris paribus or whether selection bias is likely (be specific!).  
 
-From the image above, I believe this may be selection bias. The reason is because we have more information on the control sites with a total of 3 sites and only 2 control sites. The location of the control sites are close in proximity whereas the control sites are more scattered.
+The control sites may not provide a strong counterfactual for the treatment sites because assignment to Marine Protected Area status was not random. MPAs were designated through a policy process that likely considered ecological quality, habitat suitability, and existing fishing pressure. As a result, Naples and Isla Vista may have differed systematically from non-MPA reefs even before protection began, potentially having healthier ecosystems or higher baseline lobster abundance. These pre-existing differences introduce selection bias, making it difficult to attribute post 2012 differences in lobster abundance solely to MPA protection. Therefore, the ceteris paribus assumption is unlikely to hold.
 
 ------------------------------------------------------------------------
 
