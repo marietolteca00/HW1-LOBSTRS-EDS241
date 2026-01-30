@@ -290,9 +290,9 @@ spiny_counts %>%
 **b.** Interpret the intercept & predictor coefficients *in your own words*. Use full sentences and write your interpretation of the regression results to be as clear as possible to a non-academic audience.
 
 ```
-- Intercept: On average, surveys conducted at Marine Protected Area reefs recorded about 28 lobsters per site.
+- Intercept: On average, non-mpa sites recorded about 28 lobsters per survey.
 
-- non-mpa: Non-MPA reefs had, on average, about 3 fewer lobsters per site compared to a control reef.
+- Treat: MPA sites recorded about 3 more lobsters on average than non-MPA sites, although this difference is not statistically significant.
 ```
 ```{r}
 # NOTE: We will not evaluate/interpret model fit in this assignment (e.g., R-square)
@@ -336,12 +336,11 @@ check_model(m1_ols, check = "pp_check")
 **a.** Estimate a Poisson regression model using the `glm()` function
 
 **b.** Interpret the predictor coefficient in your own words. Use full sentences and write your interpretation of the results to be as clear as possible to a non-academic audience.
-- Intercept: On average, the model estimates about 23 lobsters at non-treated (non-MPA) sites.
-- Treatment: On average, treated (MPA) sites have about five more lobsters than non-MPA sites.
+- Intercept: On average, the expected number of lobsters at non-MPA sites is about 23.
+- Treatment: On average, MPA sites have approximately 23% higher lobster counts than non-MPA sites.
 
 **c.** Explain the statistical concept of dispersion and overdispersion in the context of this model. 
-- Dispersion describes how much the data can vary. If the mean number of lobsters at a site is 5, the variance is assumed to also be 5.
-- Overdispersion occurs when there is more variability in the data than expected. In our model this can be represent by how the each sites ecosystem can be different.
+- In a Poisson model, dispersion assumes the mean and variance of the outcome are equal. Overdispersion occurs when the variance exceeds the mean, which can happen due to unobserved heterogeneity across reef sites, differences in habitat quality, or clustering of lobsters.
 
 **d.** Compare results with previous model, explain change in the significance of the treatment effect
 - Compared to OLS, the Poisson model is designed for count data and accounts for skewness and the fact that counts cannot be negative. As a result, the Poisson model produces smaller standard errors and shows the treatment effect as statistically significant, whereas the OLS model overestimates uncertainty and fails to detect significance.
@@ -386,8 +385,9 @@ check_zeroinflation(m2_pois)
 A negative binomial model was used because the lobster count data showed overdispersion, meaning the variance was larger than the mean. This model is more flexible than Poisson and produces more accurate standard errors, which in this case makes the treatment effect non-significant after accounting for extra variability.
 
 **i.** Interpret the treatment estimate result in your own words. Compare with results from the previous model.
-Intercept: Our model estimates an average of 3.34% (28 count) number of lobsters to be found in MPA locations.
-non-mpa: The model estimate that there is a reduction of 19% lobster counts in non-mpa locations. 
+Intercept: The model estimates that non-MPA sites have an expected lobster count of approximately 23 lobsters per survey.
+Treatment: MPA sites have, on average, about 23% higher lobster counts than non-MPA sites. This effect is statistically significant in the Poisson model.
+
 Compared with the Poisson model, the negative binomial accounts for overdispersion, which increases uncertainty; as a result, the treatment effect is no longer statistically significant. Diagnostic checks show that the negative binomial fits the data better, with residuals and zero counts more accurately represented.
 
 ```{r}
@@ -489,6 +489,7 @@ p1 <- interact_plot(m5_fixedeffs, pred = year, modx = treat,
     labs(title = "Link Space",
          x = 'Year',
          y = 'Lobster Count')
+p1 
 
 # HINT: Change `outcome.scale` to "response" to convert y-axis scale to counts
 
@@ -499,7 +500,7 @@ p2 <- interact_plot(m5_fixedeffs, pred = year, modx = treat,
          y = 'Lobster Count',
          modx = 'Treatment')
 
-p1 + p2
+p2
 ```
 
 **g.** Using `ggplot()` create a plot in same style as the previous `interaction plot`, but displaying the original scale of the outcome variable (lobster counts). This type of plot is commonly used to show how the treatment effect changes across discrete time points (i.e., panel data).
