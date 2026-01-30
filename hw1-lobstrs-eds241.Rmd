@@ -1,7 +1,7 @@
 ---
 title: "Assignment 1"
 author: "Marie Tolteca - EDS 241 / ESM 244 (**Due: 1/20**)"
-date: "1/20/26"
+date: "1/29/26"
 output: 
   html_document:
     theme: flatly
@@ -179,12 +179,14 @@ Create plots displaying the distribution of lobster **counts**:
 Create a plot of lobster **size** :
 
 4) You choose the grouping variable(s)!
+# Add annotation for all plots
 ```{r}
-#| fig-alt: "A ridge plot displaying the distribution of lobster counts by site. Sites are ordered reverse alphabetically. A red vertical dashed line indicates the overall mean count of approximately 25 lobsters across all sites."
+#| fig-cap: "A ridge plot displaying the distribution of lobster counts by site. Sites are ordered reverse alphabetically. A red vertical dashed line indicates the overall mean count of approximately 25 lobsters across all sites."
+
 
 spiny_counts %>% 
   mutate(site = fct_rev(site)) %>%  
-  ggplot(aes(x = num_lobsters, y = site, fill = site)) +
+  ggplot(aes(x = num_lobsters, y = site)) +
   geom_density_ridges(alpha = 0.7) +
   scale_fill_viridis_d(option = "plasma") +
   geom_vline(xintercept = mean(spiny_counts$num_lobsters), 
@@ -194,12 +196,13 @@ spiny_counts %>%
     x = "Number of Lobsters",
     y = "Site"
   ) +
+    annotate("text", x =50, y = 6,label= "mean of 25" )+
   theme_light() +
   theme(legend.position = "none")
 ```
 
 ```{r}
-#| fig-alt: "A violin plot with jittered points showing lobster count distribution by MPA status (MPA vs non-MPA). A red dashed horizontal line indicates the overall mean lobster count across both groups."
+#| fig-cap: "A violin plot with jittered points showing lobster count distribution by MPA status (MPA vs non-MPA). A red dashed horizontal line indicates the overall mean lobster count across both groups."
 
 # 2
 spiny_counts %>% 
@@ -211,6 +214,7 @@ spiny_counts %>%
              linetype = "dashed", color = "red", size = 1) + 
   labs(
     title = "Lobster Counts by MPA Status",
+    subtitle = "The red horizontal dash line represents the Mean number of lobsters of approximately 25",
     x = "Marine Protected Area (MPA) Status",
     y = "Number of Lobsters"
   ) +
@@ -219,17 +223,18 @@ spiny_counts %>%
 ```
 
 ```{r}
-#| fig-alt: "A beeswarm plot showing the distribution of lobster counts by year. Each point represents an observation, colored by year. A red dashed horizontal line indicates the overall median count of approximately 10 lobsters."
+#| fig-cap: "A beeswarm plot showing the distribution of lobster counts by year. Each point represents an observation, colored by year. A red dashed horizontal line indicates the overall median count of approximately 10 lobsters."
 
 # 3
 spiny_counts %>% 
-  ggplot(aes(x = as.factor(year), y = num_lobsters, color = as.factor(year))) +
+  ggplot(aes(x = as.factor(year), y = num_lobsters)) +
   ggbeeswarm::geom_beeswarm(alpha = 0.6, size = 2) +
   scale_color_viridis_d(option = "plasma") +
   geom_hline(yintercept = median(spiny_counts$num_lobsters), 
              linetype = "dashed", color = "red", size = 1) + 
   labs(
     title = "Lobster Count Distribution by Year",
+    subtitle = "The red horizontal dash line represents the median number of lobsters of approximately 10",
     x = "Year",
     y = "Number of Lobsters"
   ) +
@@ -239,11 +244,11 @@ spiny_counts %>%
 
 
 ```{r}
-#| fig-alt: "A boxplot overlaid with beeswarm points showing the distribution of mean lobster size by site. Sites are ordered reverse alphabetically. Boxplots show median, quartiles, and range, while individual points show the distribution of observations."
+#| fig-cap: "A boxplot overlaid with beeswarm points showing the distribution of mean lobster size by site. Sites are ordered reverse alphabetically. Boxplots show median, quartiles, and range, while individual points show the distribution of observations."
 
 spiny_counts %>% 
   mutate(site = fct_rev(site)) %>%  
-  ggplot(aes(y = site, x = mean_size, fill = site)) +
+  ggplot(aes(y = site, x = mean_size)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
   ggbeeswarm::geom_beeswarm(alpha = 0.4, size = 1.5) +
   scale_fill_viridis_d(option = "viridis") +
@@ -285,13 +290,14 @@ spiny_counts %>%
 **b.** Interpret the intercept & predictor coefficients *in your own words*. Use full sentences and write your interpretation of the regression results to be as clear as possible to a non-academic audience.
 
 ```
-- Intercept: On average, there are approximate 28% number of lobsters in MPA's.
-- non-mpa: The model estimates a reduction of 5% number of lobsters in Non-MPA's.
+- Intercept: On average, surveys conducted at Marine Protected Area reefs recorded about 28 lobsters per site.
+
+- non-mpa: Non-MPA reefs had, on average, about 3 fewer lobsters per site compared to a control reef.
 ```
 ```{r}
 # NOTE: We will not evaluate/interpret model fit in this assignment (e.g., R-square)
 
-m1_ols <- lm(num_lobsters ~ mpa, 
+m1_ols <- lm(num_lobsters ~ treat, 
              data = spiny_counts)
 
 summ(m1_ols, model.fit = FALSE) 
@@ -330,8 +336,8 @@ check_model(m1_ols, check = "pp_check")
 **a.** Estimate a Poisson regression model using the `glm()` function
 
 **b.** Interpret the predictor coefficient in your own words. Use full sentences and write your interpretation of the results to be as clear as possible to a non-academic audience.
-- Intercept: On average, the model estimates our MPA lobster count to have 28 lobsters.
-- non-mpa: The model estimate that there is a reduction of 19% lower abundance compared to mpa sites.
+- Intercept: On average, the model estimates about 23 lobsters at non-treated (non-MPA) sites.
+- Treatment: On average, treated (MPA) sites have about five more lobsters than non-MPA sites.
 
 **c.** Explain the statistical concept of dispersion and overdispersion in the context of this model. 
 - Dispersion describes how much the data can vary. If the mean number of lobsters at a site is 5, the variance is assumed to also be 5.
@@ -346,14 +352,14 @@ check_model(m1_ols, check = "pp_check")
 
 #HINT2: For the second glm() argument `family` use the following specification option `family = poisson(link = "log")`
 
-m2_pois <-glm(num_lobsters ~ mpa,
+m2_pois <-glm(num_lobsters ~ treat,
                   family = poisson(link = "log"),# Using log for multiplicative
                   data = spiny_counts
                   )
 
 summ(m2_pois, model.fit = FALSE)
-#> exp(3.34) = 28.21
-#> (exp(-0.21)-1)*100 = -18.94
+#> exp(3.12) = 22.64
+#> (exp(0.21)-1)*100 = 23.36%
 ```
 
 **e.** Check the model assumptions. Explain results.
@@ -393,8 +399,8 @@ library(MASS) ## NOTE: The `select()` function is masked. Use: `dplyr::select()`
 # NOTE: The `glm.nb()` function does not require a `family` argument
 
 m3_nb <- spiny_counts %>% 
-    dplyr::select(num_lobsters,mpa) %>% 
-    glm.nb(num_lobsters ~ mpa,
+    dplyr::select(num_lobsters,treat) %>% 
+    glm.nb(num_lobsters ~ treat,
            data  = .)
 
 summ(m3_nb, model.fit = FALSE)
@@ -449,10 +455,11 @@ export_summs(# ADD MODELS
 - Include an interaction term between variables `treat` & `year` (`treat*year`)
 
 **c.** Take a look at the regression output. Each coefficient provides a comparison or the difference in means for a specific sub-group in the data. Informally, describe the what the model has estimated at a conceptual level (NOTE: you do not have to interpret coefficients individually)
+
 - This model estimates differences in lobster counts between treated and untreated sites while controlling year to year. This interaction term being year, allows for variation and impact in treatment areas over time. 
 
 **d.** Explain why the main effect for treatment is negative? *Does this result make sense?
-The main effect for treatment is negative because, in a model with interactions, the main effect represents the treatment difference in the reference (baseline) year. Early in the study, treated sites may have had lower lobster counts before protections fully took effect. This result makes sense because the positive effects of MPAs accumulate over time, which is captured by the positive treatment and year interaction coefficients in later years.
+The main effect for treatment is negative because, in a model with interactions. The main effect represents the treatment difference in the reference (baseline) year. Early in the study, treated sites may have had lower lobster counts before protections fully took effect. This result makes sense because the positive effects of MPAs accumulate over time, which is captured by the positive treatment and year interaction coefficients in later years.
 
 
 ```{r}
@@ -534,8 +541,7 @@ plot_counts %>% ggplot(
 #### Step 8: Reconsider causal identification assumptions
 
 a. Discuss whether you think `spillover effects` are likely in this research context (see Glossary of terms; https://docs.google.com/document/d/1RIudsVcYhWGpqC-Uftk9UTz3PIq6stVyEpT44EPNgpE/edit?usp=sharing)
-- I do not think spillover effects are likely in this study because the MPA treatment in one site is unlikely to directly affect lobster abundance in nearby non-MPA sites. Each site’s lobster population is largely independent, so the treatment effect is isolated. 
-
+- Spillover effects are likely because lobsters can move between reef sites, and MPA protection may alter both lobster movement and fishing behavior at nearby non-MPA reefs, affecting outcomes beyond treated sites.
 b. Explain why spillover is an issue for the identification of causal effects
 - Spillover is an issue because if treatment in one site affects outcomes in other sites, it violates the assumption that each unit’s outcome depends only on its own treatment. This can bias estimates of the causal effect.
 
@@ -549,11 +555,10 @@ d. Discuss the following causal inference assumptions in the context of the MPA 
     - Causal inference assumption: 
     No interference: One unit’s treatment does not affect another unit’s outcome (MPA/Treat). 
     No hidden variation: The treatment is implemented consistently for all units (i.e., all units receive the same     treatment)
-    - The SUTVA assumption appears reasonable in this study. Lobster abundance in each site is unlikely to be affected by the treatment status of other sites(no inference), and the MPA management was applied consistently across treated sites(no hidden variation).
+    SUTVA may be violated if Naples and Isla Vista MPAs operate under different regulatory rules, creating multiple versions of the treatment rather than a single, uniform MPA intervention.
     
-    2) Excludability assumption
-    The excludability assumption requires that the intervention influences the outcome only through the proposed mechanisms, such as leader efforts and community coordination, and not through other unintended pathways.
-    - An intervention could be a fisherman could have gone to an MPA site without anyone noticing. The researcher may have made an assumption that no boundaries were crossed.
+    2) Exogeneity assumption
+    The exogeneity assumption may be violated if MPA designation is correlated with unobserved factors that influence lobster abundance. Fishing behavior may shift around MPA boundaries, indirectly influencing lobster counts at both protected and unprotected sites. These alternative pathways make it difficult to attribute differences in only lobster abundance to MPA status.
 
 
 ------------------------------------------------------------------------
